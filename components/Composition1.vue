@@ -12,7 +12,8 @@ import {
   useContext,
   onUnmounted,
   toRefs,
-  reactive
+  reactive,
+  watch
 } from '@nuxtjs/composition-api'
 
 export default defineComponent({
@@ -37,6 +38,11 @@ export default defineComponent({
       reconnection: false
     })
     ctx.getMessage2('see me??')
+    ctx.$watch = (label, cb) => {
+      // This stub will be enabled
+      // in the plugin when '@nuxtjs/composition-api' reaches stable version:
+      watch(ctx.$data[label], cb)
+    }
     ctx.$watch('message2Rxd', (n, o) => {
       // eslint-disable-next-line no-console
       console.log('message2Rxd changed', n, o)

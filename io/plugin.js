@@ -6,7 +6,12 @@
 import io from 'socket.io-client'
 import Debug from 'debug'
 import emitter from 'tiny-emitter/instance'
-import { watch as vueWatch } from '@nuxtjs/composition-api'
+/*
+ TODO: 
+ 1) will enable when '@nuxtjs/composition-api' reaches stable version:
+ 2) will bump from devDep to dep when stable
+*/
+ // import { watch as vueWatch } from '@nuxtjs/composition-api'
 
 const debug = Debug('nuxt-socket-io')
 
@@ -825,7 +830,8 @@ const register = {
 
     if (!ctx.$watch) {
       ctx.$watch = (label, cb) => {
-        vueWatch(ctx.$data[label], cb)
+        // will enable when '@nuxtjs/composition-api' reaches stable version:
+        // vueWatch(ctx.$data[label], cb)
       }
     }
   }
