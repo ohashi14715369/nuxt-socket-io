@@ -8,13 +8,9 @@
 <script>
 // @ts-nocheck
 import {
-  computed,
-  watch,
   defineComponent,
   useContext,
-  onMounted,
   onUnmounted,
-  ref,
   toRefs,
   reactive
 } from '@nuxtjs/composition-api'
@@ -27,28 +23,24 @@ export default defineComponent({
         message2Rxd: 'this should change'
       })
     )
-    // $watch stub:
-    ctx.$watch = (label, cb) => {
-      watch(ctx.$data[label], cb)
-    }
     ctx.$destroy = () => {
+      // eslint-disable-next-line no-console
       console.log('run me too')
     }
-
+    ctx.onUnmounted = onUnmounted
     ctx.$nuxtSocket({
       channel: '/index',
-      reconnection: false,
-      onUnmounted
+      reconnection: false
     })
     ctx.$nuxtSocket({
       channel: '/index',
-      reconnection: false,
-      onUnmounted
+      reconnection: false
     })
     ctx.getMessage2('see me??')
-    // ctx.$watch('message2Rxd', (n, o) => {
-    //   console.log('message2Rxd changed', n, o)
-    // })
+    ctx.$watch('message2Rxd', (n, o) => {
+      // eslint-disable-next-line no-console
+      console.log('message2Rxd changed', n, o)
+    })
 
     return {
       ...ctx.$data,

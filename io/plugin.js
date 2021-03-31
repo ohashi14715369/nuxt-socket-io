@@ -1,12 +1,12 @@
 /* eslint-disable no-console */
 /*
- * Copyright 2020 Richard Schloss (https://github.com/richardeschloss/nuxt-socket-io)
+ * Copyright 2021 Richard Schloss (https://github.com/richardeschloss/nuxt-socket-io)
  */
 
 import io from 'socket.io-client'
 import Debug from 'debug'
 import emitter from 'tiny-emitter/instance'
-// import { watch as vueWatch } from '@nuxtjs/composition-api'
+import { watch as vueWatch } from '@nuxtjs/composition-api'
 
 const debug = Debug('nuxt-socket-io')
 
@@ -766,7 +766,7 @@ const register = {
     })
     Object.assign(ctx, { [statusProp]: socketStatus })
   },
-  teardown({ ctx, socket, useSocket, onUnmounted }) {
+  teardown({ ctx, socket, useSocket }) {
     // Setup listener for "closeSockets" in case
     // multiple instances of nuxtSocket exist in the same
     // component (only one destroy/unmount event takes place).
@@ -794,8 +794,8 @@ const register = {
           ctx.onComponentDestroy()
         }
       }
-      if (onUnmounted) {
-        onUnmounted(ctx.$destroy)
+      if (ctx.onUnmounted) {
+        ctx.onUnmounted(ctx.$destroy)
       }
       ctx.registeredTeardown = true
     }
@@ -822,6 +822,12 @@ const register = {
         }
       }
     }
+
+    if (!ctx.$watch) {
+      ctx.$watch = (label, cb) => {
+        vueWatch(ctx.$data[label], cb)
+      }
+    }
   }
 }
 
@@ -841,7 +847,6 @@ function nuxtSocket(ioOpts) {
     clientAPI,
     vuex,
     namespaceCfg,
-    onUnmounted,
     ...connectOpts
   } = ioOpts
   const pluginOptions = _pOptions.get()
@@ -1035,8 +1040,7 @@ function nuxtSocket(ioOpts) {
     register.teardown({
       ctx: this,
       socket,
-      useSocket,
-      onUnmounted
+      useSocket
     })
   }
   _pOptions.set({ sockets })
