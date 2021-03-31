@@ -6,22 +6,14 @@
 </template>
 <script>
 // @ts-nocheck
-import { computed, defineComponent, useContext, onMounted, onUnmounted, ref, reactive } from '@nuxtjs/composition-api'
+import { computed, defineComponent, useContext, onMounted, onUnmounted, ref, toRefs, reactive } from '@nuxtjs/composition-api'
 
 export default defineComponent({
   setup(props, context) {
     const ctx = useContext()
-    // Using reactive:
-    // const data = reactive({
-    //   message2Rxd: 'incoming'
-    // })
-    
-    // Using refs:
-    const data = {
-      message2Rxd: ref('incoming')
-    }
-
-    ctx.$data = data
+    ctx.$data = toRefs(reactive({
+      message2Rxd: 'this should change'    
+    }))
     
     const socket = ctx.$nuxtSocket({
       channel: '/index',
@@ -31,8 +23,7 @@ export default defineComponent({
     })
     ctx.getMessage2('see me??')
     return { 
-      // data, // if using reactive, we'd have to use {{ data.message2Rxd }}
-      ...data, // if using refs
+      ...ctx.$data,
       getMessage2: ctx.getMessage2
     }
   }
