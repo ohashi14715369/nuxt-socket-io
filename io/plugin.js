@@ -557,7 +557,7 @@ const register = {
       socket.on(evt, async (resp) => {
         debug('Local listener received data', { evt, resp })
         await runHook(ctx, pre)
-        assignResp(ctx, mapTo, resp)
+        assignResp(ctx.$data, mapTo, resp)
         runHook(ctx, post, resp)
       })
     })
@@ -830,6 +830,13 @@ function nuxtSocket(ioOpts) {
   if (!this.$on || !this.$emit) {
     this.$on = emitter.on
     this.$emit = emitter.emit
+  }
+
+  if (!this.$set) {
+    // this.$set stub
+    this.$set = function(obj, key, val) {
+      obj[key].value = val
+    }
   }
   
   const runtimeOptions = { ...pluginOptions }

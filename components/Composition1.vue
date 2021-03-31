@@ -6,7 +6,7 @@
 </template>
 <script>
 // @ts-nocheck
-import { computed, defineComponent, useContext, onMounted, onUnmounted, ref, toRefs, reactive } from '@nuxtjs/composition-api'
+import { computed, watch, defineComponent, useContext, onMounted, onUnmounted, ref, toRefs, reactive } from '@nuxtjs/composition-api'
 
 export default defineComponent({
   setup(props, context) {
@@ -14,6 +14,10 @@ export default defineComponent({
     ctx.$data = toRefs(reactive({
       message2Rxd: 'this should change'    
     }))
+    // $watch stub:
+    ctx.$watch = (label, cb) => {
+      watch(ctx.$data[label], cb)
+    }
     
     const socket = ctx.$nuxtSocket({
       channel: '/index',
@@ -22,6 +26,10 @@ export default defineComponent({
       onUnmounted
     })
     ctx.getMessage2('see me??')
+    ctx.$watch('message2Rxd', (n, o) => {
+      console.log('message2Rxd changed', n, o)
+    })
+  
     return { 
       ...ctx.$data,
       getMessage2: ctx.getMessage2
