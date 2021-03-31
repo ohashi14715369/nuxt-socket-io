@@ -5,6 +5,7 @@
 
 import io from 'socket.io-client'
 import Debug from 'debug'
+import emitter from 'tiny-emitter/instance'
 
 const debug = Debug('nuxt-socket-io')
 
@@ -520,6 +521,10 @@ const register = {
                 reject(err)
               }
             } else {
+              console.log('[plugin] RESP', mapTo, resp)
+              console.log('before', ctx[mapTo])
+              console.log('after', ctx[mapTo])
+              ctx[mapTo] = resp              
               assignResp(ctx, mapTo, resp)
               runHook(ctx, post, resp)
               resolve(resp)
@@ -758,11 +763,14 @@ const register = {
     })
     Object.assign(ctx, { [statusProp]: socketStatus })
   },
-  teardown({ ctx, socket, useSocket }) {
+  teardown({ ctx, socket, useSocket, onUnmounted }) {
     if (ctx.onComponentDestroy === undefined) {
       ctx.onComponentDestroy = ctx.$destroy
     }
 
+    // Setup listener for "closeSockets" in case
+    // multiple instances of nuxtSocket exist in the same
+    // component (only one destroy/unmount event takes place)
     ctx.$on('closeSockets', function() {
       socket.removeAllListeners()
       socket.close()
@@ -777,7 +785,12 @@ const register = {
         })
         useSocket.registeredVuexListeners = []
         ctx.$emit('closeSockets')
-        ctx.onComponentDestroy()
+        if (ctx.onComponentDestroy) {
+          ctx.onComponentDestroy()
+        }
+      }
+      if (onUnmounted) {
+        onUnmounted(ctx.$destroy)
       }
       ctx.registeredTeardown = true
     }
@@ -805,11 +818,17 @@ function nuxtSocket(ioOpts) {
     clientAPI,
     vuex,
     namespaceCfg,
+    onUnmounted,
     ...connectOpts
   } = ioOpts
   const pluginOptions = _pOptions.get()
-  const { $config, $store: store } = this
-
+  const { $config } = this
+  const store = this.$store || this.store
+  if (!this.$on || !this.$emit) {
+    this.$on = emitter.on
+    this.$emit = emitter.emit
+  }
+  
   const runtimeOptions = { ...pluginOptions }
   if ($config && $config.io) {
     Object.assign(runtimeOptions, $config.io)
@@ -996,7 +1015,8 @@ function nuxtSocket(ioOpts) {
     register.teardown({
       ctx: this,
       socket,
-      useSocket
+      useSocket,
+      onUnmounted
     })
   }
   _pOptions.set({ sockets })
