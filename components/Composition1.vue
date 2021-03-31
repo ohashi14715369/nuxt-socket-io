@@ -1,8 +1,7 @@
 <template>
   <div>Component using composition api
     <button @click="getMessage2('hello world')">Get Message</button>
-    <br/>
-    {{ message2Rxd }}
+    <div>{{ message2Rxd }}</div>
   </div>
 </template>
 <script>
@@ -12,20 +11,29 @@ import { computed, defineComponent, useContext, onMounted, onUnmounted, ref, rea
 export default defineComponent({
   setup(props, context) {
     const ctx = useContext()
+    // Using reactive:
+    // const data = reactive({
+    //   message2Rxd: 'incoming'
+    // })
+    
+    // Using refs:
     const data = {
-      message2Rxd: ref('incoming?')
+      message2Rxd: ref('incoming')
     }
-    Object.assign(ctx, { ...data })
+
+    ctx.$data = data
+    
     const socket = ctx.$nuxtSocket({
       channel: '/index',
       reconnection: false,
       teardown: false,
       onUnmounted
     })
-    
+    ctx.getMessage2('see me??')
     return { 
-      ...data, 
-      getMessage2: ctx.getMessage2, 
+      // data, // if using reactive, we'd have to use {{ data.message2Rxd }}
+      ...data, // if using refs
+      getMessage2: ctx.getMessage2
     }
   }
 })

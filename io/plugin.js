@@ -527,7 +527,7 @@ const register = {
                 reject(err)
               }
             } else {
-              assignResp(ctx, mapTo, resp)
+              assignResp(ctx.$data, mapTo, resp)
               runHook(ctx, post, resp)
               resolve(resp)
             }
@@ -821,6 +821,7 @@ function nuxtSocket(ioOpts) {
     vuex,
     namespaceCfg,
     onUnmounted,
+    data,
     ...connectOpts
   } = ioOpts
   const pluginOptions = _pOptions.get()
@@ -952,6 +953,7 @@ function nuxtSocket(ioOpts) {
   if (_namespaceCfg) {
     register.namespace({
       ctx: this,
+      data,
       namespace: channel,
       namespaceCfg: _namespaceCfg,
       socket,
