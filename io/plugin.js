@@ -21,6 +21,8 @@ function PluginOptions() {
   })
 }
 
+const isRefImpl = (any) => any && any.constructor.name === 'RefImpl' 
+
 const _pOptions = PluginOptions()
 
 const _sockets = {}
@@ -104,7 +106,11 @@ function assignResp(ctx, prop, resp) {
   if (prop !== undefined) {
     if (ctx[prop] !== undefined) {
       if (typeof ctx[prop] !== 'function') {
-        ctx[prop] = resp
+        if (isRefImpl(ctx[prop])) {
+          ctx[prop].value = resp
+        } else {
+          ctx[prop] = resp
+        }
         debug(`assigned ${resp} to ${prop}`)
       }
     } else {
@@ -521,10 +527,6 @@ const register = {
                 reject(err)
               }
             } else {
-              console.log('[plugin] RESP', mapTo, resp)
-              console.log('before', ctx[mapTo])
-              console.log('after', ctx[mapTo])
-              ctx[mapTo] = resp              
               assignResp(ctx, mapTo, resp)
               runHook(ctx, post, resp)
               resolve(resp)
