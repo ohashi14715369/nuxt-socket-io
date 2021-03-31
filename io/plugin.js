@@ -6,6 +6,7 @@
 import io from 'socket.io-client'
 import Debug from 'debug'
 import emitter from 'tiny-emitter/instance'
+// import { watch as vueWatch } from '@nuxtjs/composition-api'
 
 const debug = Debug('nuxt-socket-io')
 
@@ -766,19 +767,21 @@ const register = {
     Object.assign(ctx, { [statusProp]: socketStatus })
   },
   teardown({ ctx, socket, useSocket, onUnmounted }) {
-    if (ctx.onComponentDestroy === undefined) {
-      ctx.onComponentDestroy = ctx.$destroy
-    }
-
     // Setup listener for "closeSockets" in case
     // multiple instances of nuxtSocket exist in the same
-    // component (only one destroy/unmount event takes place)
-    ctx.$on('closeSockets', function() {
+    // component (only one destroy/unmount event takes place).
+    // When we teardown, we want to remove the listeners of all
+    // the socket.io-client instances
+    ctx.$once('closeSockets', function() {
+      debug('closing socket id=' + socket.id)
       socket.removeAllListeners()
       socket.close()
     })
 
     if (!ctx.registeredTeardown) {
+      if (ctx.onComponentDestroy === undefined) {
+        ctx.onComponentDestroy = ctx.$destroy
+      }
       debug('teardown enabled for socket', { name: useSocket.name })
       ctx.$destroy = function() {
         debug('component destroyed, closing socket(s)', {
@@ -801,6 +804,24 @@ const register = {
       debug('server disconnected', { name: useSocket.name, url: useSocket.url })
       socket.close()
     })
+  },
+  stubs(ctx) {
+    if (!ctx.$on || !ctx.$emit || !ctx.$once) {
+      ctx.$once = (...args) => emitter.once(...args)
+      ctx.$on = (...args) => emitter.on(...args)
+      ctx.$off = (...args) => emitter.off(...args)
+      ctx.$emit = (...args) => emitter.emit(...args)
+    }
+  
+    if (!ctx.$set) {
+      ctx.$set = (obj, key, val) => {
+        if (isRefImpl(obj[key])) {
+          obj[key].value = val
+        } else {
+          obj[key] = val
+        }
+      }
+    }
   }
 }
 
@@ -821,24 +842,13 @@ function nuxtSocket(ioOpts) {
     vuex,
     namespaceCfg,
     onUnmounted,
-    data,
     ...connectOpts
   } = ioOpts
   const pluginOptions = _pOptions.get()
-  const { $config } = this
+  const { $config, $store } = this
   const store = this.$store || this.store
-  if (!this.$on || !this.$emit) {
-    this.$on = emitter.on
-    this.$emit = emitter.emit
-  }
+  register.stubs(this)
 
-  if (!this.$set) {
-    // this.$set stub
-    this.$set = function(obj, key, val) {
-      obj[key].value = val
-    }
-  }
-  
   const runtimeOptions = { ...pluginOptions }
   if ($config && $config.io) {
     Object.assign(runtimeOptions, $config.io)
@@ -960,7 +970,6 @@ function nuxtSocket(ioOpts) {
   if (_namespaceCfg) {
     register.namespace({
       ctx: this,
-      data,
       namespace: channel,
       namespaceCfg: _namespaceCfg,
       socket,
